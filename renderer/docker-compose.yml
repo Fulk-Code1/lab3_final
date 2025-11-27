@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  angle-service:
+    build: ./angle-service
+    ports:
+      - "8000:8000"
+    container_name: angle-service
+
+  renderer:
+    build: ./renderer
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    depends_on:
+      - angle-service
+    privileged: true   # нужно для Windows WSL2 / Linux с X11
