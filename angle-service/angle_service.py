@@ -1,28 +1,23 @@
-# angle-service/test_angle.py
-import pytest
-import requests
+# angle_service.py
+import http.server
+import socketserver
+import json
 import time
-import threading
-from angle_service import app  # ← теперь правильно!
 
-@pytest.fixture(scope="module")
-def server():
-    thread = threading.Thread(target=app.run, kwargs={"port": 8000})
-    thread.daemon = True
-    thread.start()
-    time.sleep(0.5)
-    yield
+start_time = time.time()
 
-def test_angle_returns_number(server):
-    resp = requests.get("http://127.0.0.1:8000/angle")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "angle" in data
-    assert isinstance(data["angle"], float)
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/angle':
+            angle = (time.time() - start_time) * 90 % 360
+            data = {"angle": angle}
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(data).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
 
-def test_angle_increases_over_time(server):
-    angle1 = requests.get("http://127.0.0.1:8000/angle").json()["angle"]
-    time.sleep(1.1)
-    angle2 = requests.get("http://127.0.0.1:8000/angle").json()["angle"]
-    assert angle2 > angle1  # просто больше, без точных градусов
-    assert (angle2 - angle1) >= 80  # ~90°/сек
+print("Angle service запущен на http://127.0.0.1:8000")
+socketserver.TCPServer(("0.0.0.0", 8000), Handler).serve_forever()

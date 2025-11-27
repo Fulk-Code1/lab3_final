@@ -1,27 +1,37 @@
-name: CI/CD
+  name: CI/CD
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
+  on:
+    push:
+      branches: [ main, master ]
+    pull_request:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
+  jobs:
+    test:
+      runs-on: ubuntu-latest
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      # Запускаем наш angle-service как background-сервис
+      services:
+        angle-service:
+          image: python:3.11-slim
+          ports:
+            - 8000:8000
+          volumes:
+            - ./angle-service:/app
+          # ← только разрешённые ключи для services
+          options: --workdir /app
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest requests
+      steps:
+        - uses: actions/checkout@v4
 
-    - name: Run unit tests
-      run: |
-        pytest -v angle-service/test_angle.py
+        - name: Setup Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.11'
+
+        - name: Install pytest & requests
+          run: pip install pytest requests
+
+        - name: Wait and run tests
+          run: |
+            sleep 4
+            pytest -v angle-service/test_angle.py
