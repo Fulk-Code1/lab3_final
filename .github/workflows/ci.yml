@@ -2,16 +2,13 @@ name: CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./angle-service
-
+    
     steps:
     - uses: actions/checkout@v4
 
@@ -25,6 +22,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest requests
 
-    - name: Run tests
+    - name: Run unit tests
       run: |
-        pytest -v
+        pytest -v ./angle-service
