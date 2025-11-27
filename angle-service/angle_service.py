@@ -3,17 +3,15 @@ import pytest
 import requests
 import time
 import threading
-from app import app  # импортируем наш сервис для теста
+from angle_service import app  # ← теперь правильно!
 
-# Запускаем сервис в фоне
 @pytest.fixture(scope="module")
 def server():
     thread = threading.Thread(target=app.run, kwargs={"port": 8000})
     thread.daemon = True
     thread.start()
-    time.sleep(0.5)  # даём серверу запуститься
+    time.sleep(0.5)
     yield
-    # ничего не чистим — процесс умрёт сам
 
 def test_angle_returns_number(server):
     resp = requests.get("http://127.0.0.1:8000/angle")
@@ -26,5 +24,5 @@ def test_angle_increases_over_time(server):
     angle1 = requests.get("http://127.0.0.1:8000/angle").json()["angle"]
     time.sleep(1.1)
     angle2 = requests.get("http://127.0.0.1:8000/angle").json()["angle"]
-    # 90 градусов в секунду → за 1.1 сек должно вырасти примерно на 99
-    assert angle2 - angle1 >= 80
+    assert angle2 > angle1  # просто больше, без точных градусов
+    assert (angle2 - angle1) >= 80  # ~90°/сек
