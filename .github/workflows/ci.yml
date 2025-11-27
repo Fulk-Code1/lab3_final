@@ -1,37 +1,41 @@
-  name: CI/CD
+name: CI/CD
 
-  on:
-    push:
-      branches: [ main, master ]
-    pull_request:
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
 
-  jobs:
-    test:
-      runs-on: ubuntu-latest
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-      # Запускаем наш angle-service как background-сервис
-      services:
-        angle-service:
-          image: python:3.11-slim
-          ports:
-            - 8000:8000
-          volumes:
-            - ./angle-service:/app
-          # ← только разрешённые ключи для services
-          options: --workdir /app
+    services:
+      angle-service:
+        build: ./angle-service
+        ports:
+          - 8000:8000
 
-      steps:
-        - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-        - name: Setup Python
-          uses: actions/setup-python@v4
-          with:
-            python-version: '3.11'
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-        - name: Install pytest & requests
-          run: pip install pytest requests
+      - name: Install pytest & requests
+        run: pip install pytest requests
 
-        - name: Wait and run tests
-          run: |
-            sleep 4
-            pytest -v angle-service/test_angle.py
+      - name: Wait for service
+        run: |
+          for i in {1..20}; do
+            if curl -s http://localhost:8000/angle > /dev/null; then
+              echo "Service is up!"
+              break
+            fi
+            echo "Waiting for service..."
+            sleep 1
+          done
+
+      - name: Run tests
+        run: pytest -v angle-service/test_angle.py
